@@ -1,0 +1,3 @@
+- 0.0.0
+  - Initial release!
+  - Basic building blocks for patching and testing audio connection :)
