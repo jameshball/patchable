@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>sh.ball</groupId>
+    <artifactId>patchable</artifactId>
+    <version>0.0.0</version>
+
+    <name>patchable</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>19</maven.compiler.release>
+        <javafx.version>19</javafx.version>
+        <appMainClass>sh.ball.gui.Launcher</appMainClass>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.4.1</version>
+                <executions>
+                    <execution>
+                        <id>auto-clean</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>none</phase>
+                        <configuration>
+                            <finalName>unwanted</finalName>
+                            <classifier>unwanted</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${appMainClass}</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <appendAssemblyId>false</appendAssemblyId>
+                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.release}</source>
+                    <target>${maven.compiler.release}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.4.0</version>
+
+                <configuration>
+                    <name>patchable</name>
+                    <description>patchable</description>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>james.ball.sh</vendor>
+                    <input>${project.build.directory}/lib</input>
+                    <mainJar>patchable-${project.version}.jar</mainJar>
+                    <mainClass>${appMainClass}</mainClass>
+                    <destination>${project.build.directory}/lib</destination>
+                    <javaOptions>
+                        <option>-Dfile.encoding=UTF-8</option>
+                    </javaOptions>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>win</id>
+                        <configuration>
+                            <winMenu>true</winMenu>
+                            <winMenuGroup>patchable</winMenuGroup>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>debian</id>
+                    </execution>
+                    <execution>
+                        <id>mac</id>
+                        <configuration>
+                            <type>PKG</type>
+                            <macPackageName>patchable</macPackageName>
+                            <macBundleIdentifier>Patchable-${project.version}</macBundleIdentifier>
+                            <macBundleName>patchable</macBundleName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <name>jitpack</name>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    <dependencies>
+        <!-- https://sjoerdvankreel.github.io/xt-audio/ -->
+        <dependency>
+            <groupId>com.github.sjoerdvankreel</groupId>
+            <artifactId>xt.audio</artifactId>
+            <version>2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.github.axet/TarsosDSP -->
+        <dependency>
+            <groupId>com.github.axet</groupId>
+            <artifactId>TarsosDSP</artifactId>
+            <version>2.4-1</version>
+        </dependency>
+    </dependencies>
+    <profiles>
+        <profile>
+            <id>win</id>
+
+            <activation>
+                <os><family>windows</family></os>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics </artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>win</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>mac</id>
+
+            <activation>
+                <os><family>mac</family></os>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics </artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>mac</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>linux</id>
+
+            <activation>
+                <os><family>unix</family></os>
+            </activation>
+
+            <dependencies>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics </artifactId>
+                    <version>${javafx.version}</version>
+                    <classifier>linux</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+
+    </profiles>
+</project>

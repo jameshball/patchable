@@ -1,0 +1,97 @@
+name: Maven Package and Release patchable
+
+on:
+  push:
+    branches: [ release ]
+
+jobs:
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up JDK 19
+      uses: actions/setup-java@v2
+      with:
+        java-version: '19'
+        distribution: 'adopt'
+    - name: Build with Maven
+      run: |
+        mvn -B package
+        mvn -B jpackage:jpackage@win
+        $version= mvn help:evaluate -Dexpression="project.version" -q -DforceStdout
+        echo "VERSION=$version" >> $env:GITHUB_ENV
+        mv "target/lib/patchable-$version.jar" "target/lib/patchable-win-$version.jar"
+        ls target/lib/
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body_path: .github/workflows/RELEASE.md
+        tag_name: v${{ env.VERSION }}
+        files: |
+          target/lib/patchable-${{ env.VERSION }}.exe
+          target/lib/patchable-win-${{ env.VERSION }}.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: jameshball/patchable
+
+  build-debian:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 19
+        uses: actions/setup-java@v2
+        with:
+          java-version: '19'
+          distribution: 'adopt'
+      - name: Build with Maven
+        run: |
+          mvn -B package
+          mvn -B jpackage:jpackage@debian
+          version=$(mvn help:evaluate -Dexpression="project.version" -q -DforceStdout)
+          echo "VERSION=$version" >> $GITHUB_ENV
+          mv target/lib/patchable-$version.jar target/lib/patchable-unix-$version.jar
+          ls target/lib/
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          files: |
+            target/lib/patchable_${{ env.VERSION }}-1_amd64.deb
+            target/lib/patchable-unix-${{ env.VERSION }}.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: jameshball/patchable
+
+  build-mac:
+
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 19
+        uses: actions/setup-java@v2
+        with:
+          java-version: '19'
+          distribution: 'adopt'
+      - name: Build with Maven
+        run: |
+          mvn -B package
+          mvn -B jpackage:jpackage@mac
+          version=$(mvn help:evaluate -Dexpression="project.version" -q -DforceStdout)
+          echo "VERSION=$version" >> $GITHUB_ENV
+          mv target/lib/patchable-$version.jar target/lib/patchable-mac-$version.jar
+          ls target/lib/
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.VERSION }}
+          files: |
+            target/lib/patchable-${{ env.VERSION }}.pkg
+            target/lib/patchable-mac-${{ env.VERSION }}.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: jameshball/patchable
