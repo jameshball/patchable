@@ -1,37 +1,55 @@
 package sh.ball.graph;
 
+import javafx.beans.property.Property;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Line;
+import sh.ball.audio.engine.AudioDevice;
+import sh.ball.audio.engine.AudioDeviceListener;
+import sh.ball.audio.engine.AudioEngine;
 import sh.ball.graph.blocks.Block;
 
 import java.util.ArrayList;
 import java.util.List;
+import sh.ball.graph.blocks.BlockData;
 
 public class GraphController {
 
   private final Group group;
   private final List<Block> blocks = new ArrayList<>();
   private final List<Node> nodes = new ArrayList<>();
+  private final AudioEngine audioEngine;
+  private final Property<KeyEvent> keyEventProperty = new SimpleObjectProperty<>();
 
   private double offsetX;
   private double offsetY;
   private int blockIndex = -1;
   private Line cable;
+  private Block returnBlock;
 
 
-  public GraphController(Group group, ContextMenu contextMenu) {
+  public GraphController(Group group, ContextMenu contextMenu, AudioEngine audioEngine) {
     MenuItem cut = new MenuItem("Cut");
     MenuItem copy = new MenuItem("Copy");
     MenuItem paste = new MenuItem("Paste");
     contextMenu.getItems().addAll(cut, copy, paste);
+
+    this.audioEngine = audioEngine;
     this.group = group;
+  }
+
+  public void setReturnBlock(Block block) {
+    this.returnBlock = block;
+    addBlock(block);
   }
 
   public void addBlock(Block block) {
@@ -42,8 +60,11 @@ public class GraphController {
 
     node.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
       if (event.isPrimaryButtonDown()) {
-        offsetX = event.getSceneX() - node.getLayoutX();
-        offsetY = event.getSceneY() - node.getLayoutY();
+        KeyEvent key = keyEventProperty.getValue();
+        if (key != null && key.isShortcutDown()) {
+          offsetX = event.getSceneX() - node.getLayoutX();
+          offsetY = event.getSceneY() - node.getLayoutY();
+        }
       } else if (event.isSecondaryButtonDown()) {
         // check if we're over a node
         for (int i = 0; i < nodes.size(); i++) {
@@ -65,8 +86,11 @@ public class GraphController {
 
     node.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
       if (event.isPrimaryButtonDown()) {
-        node.setLayoutX(event.getSceneX() - offsetX);
-        node.setLayoutY(event.getSceneY() - offsetY);
+        KeyEvent key = keyEventProperty.getValue();
+        if (key != null && key.isShortcutDown()) {
+          node.setLayoutX(event.getSceneX() - offsetX);
+          node.setLayoutY(event.getSceneY() - offsetY);
+        }
       } else if (event.isSecondaryButtonDown()) {
         if (cable != null) {
           cable.setEndX(event.getSceneX());
@@ -93,7 +117,7 @@ public class GraphController {
               // add the input to the block
               Block startBlock = blocks.get(blockIndex);
               Block endBlock = blocks.get(i);
-              if (endBlock.currentInputs() < endBlock.totalInputs()) {
+              if (endBlock.currentInputs() + startBlock.totalOutputs() <= endBlock.totalInputs()) {
                 endBlock.addInput(startBlock);
                 other.setViewOrder(cable.getViewOrder() + 1);
                 connected = true;
@@ -111,5 +135,25 @@ public class GraphController {
         }
       }
     });
+  }
+
+  public void start() throws Exception {
+    AudioDevice device = audioEngine.getDefaultOutputDevice();
+    blocks.forEach(block -> block.audioDeviceChanged(device));
+
+    audioEngine.play(() -> {
+      BlockData data = returnBlock.process();
+      if (data.data.length == 2) {
+        return new float[]{(float) data.data[0], (float) data.data[1]};
+      } else if (data.data.length == 1) {
+        return new float[]{(float) data.data[0], 0};
+      } else {
+        return new float[]{0, 0};
+      }
+    }, device);
+  }
+
+  public void setKeyEventProperty(KeyEvent event) {
+    keyEventProperty.setValue(event);
   }
 }

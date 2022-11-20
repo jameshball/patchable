@@ -3,12 +3,11 @@ package sh.ball.gui;
 import com.sun.javafx.PlatformUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
-import sh.ball.audio.engine.AudioDevice;
-import sh.ball.audio.engine.AudioEngine;
 import sh.ball.audio.engine.ConglomerateAudioEngine;
 import sh.ball.audio.midi.MidiCommunicator;
 import sh.ball.graph.GraphView;
@@ -24,16 +23,9 @@ public class Gui extends Application {
   public static final MidiCommunicator midiCommunicator = new MidiCommunicator();
   public static String LOG_DIR = "./logs/";
   public static final Logger logger = Logger.getLogger(Gui.class.getName());
-  public static AudioEngine audioEngine;
-  public static AudioDevice defaultOutputDevice;
-  public static AudioDevice defaultInputDevice;
 
   static {
     try {
-      audioEngine = new ConglomerateAudioEngine();
-      defaultOutputDevice = audioEngine.getDefaultOutputDevice();
-      defaultInputDevice = audioEngine.getDefaultInputDevice();
-
       if (PlatformUtil.isWindows()) {
         LOG_DIR = System.getenv("AppData");
       } else if (PlatformUtil.isUnix() || PlatformUtil.isMac()) {
@@ -59,20 +51,6 @@ public class Gui extends Application {
       logger.log(Level.SEVERE, e.getMessage(), e);
     }
     new Thread(midiCommunicator).start();
-    // testing audio engine
-    new Thread(() -> {
-      var ref = new Object() {
-        double phase = 0;
-      };
-      try {
-        audioEngine.play(() -> new float[]{
-            (float) Math.sin(++ref.phase / 100),
-            (float) Math.cos(ref.phase / 100)
-        }, defaultOutputDevice);
-      } catch (Exception e) {
-        logger.log(Level.SEVERE, e.getMessage(), e);
-      }
-    }).start();
   }
 
   @Override
@@ -83,15 +61,19 @@ public class Gui extends Application {
     Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.log(Level.SEVERE, e.getMessage(), e));
 
     ContextMenu contextMenu = new ContextMenu();
-    Scene scene = new Scene(new GraphView(contextMenu).getParent());
+    GraphView graphView = new GraphView(contextMenu, new ConglomerateAudioEngine());
+    Scene scene = new Scene(graphView.getParent());
     stage.setScene(scene);
     stage.show();
 
-    scene.setOnKeyPressed(e -> {
-      if (e.getCode() == KeyCode.SHIFT) {
+    EventHandler<KeyEvent> keyEventHandler = e -> {
+      graphView.setKeyEventProperty(e);
+      if (e.isShiftDown()) {
         contextMenu.show(scene.getWindow(), stage.getX(), stage.getY() + stage.getHeight() / 2 - 20);
       }
-    });
+    };
+    scene.setOnKeyPressed(keyEventHandler);
+    scene.setOnKeyReleased(keyEventHandler);
 
     stage.setOnCloseRequest(t -> {
       Platform.exit();
