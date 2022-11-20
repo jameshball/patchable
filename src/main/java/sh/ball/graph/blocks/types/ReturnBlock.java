@@ -1,4 +1,4 @@
-package sh.ball.graph.blocks;
+package sh.ball.graph.blocks.types;
 
 import com.sun.javafx.geom.RoundRectangle2D;
 import javafx.scene.Node;
@@ -8,6 +8,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 
 import java.util.List;
+import sh.ball.audio.engine.AudioDevice;
+import sh.ball.graph.blocks.Block;
+import sh.ball.graph.blocks.BlockData;
+import sh.ball.graph.blocks.BlockDesigner;
 
 public class ReturnBlock implements Block {
 
@@ -17,6 +21,9 @@ public class ReturnBlock implements Block {
 
   @Override
   public BlockData process() {
+    if (input == null) {
+      return new BlockData();
+    }
     return input.process();
   }
 
@@ -51,5 +58,10 @@ public class ReturnBlock implements Block {
   @Override
   public Node getNode() {
     return BlockDesigner.createNode(Paint.valueOf("red"), "Return", 70, 20);
+  }
+
+  @Override
+  public void audioDeviceChanged(AudioDevice audioDevice) {
+    // do nothing
   }
 }
