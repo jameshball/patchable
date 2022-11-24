@@ -6,22 +6,23 @@ import javafx.scene.control.Slider;
 import javafx.scene.paint.Paint;
 import sh.ball.audio.engine.AudioDevice;
 import sh.ball.graph.blocks.Block;
-import sh.ball.graph.blocks.BlockData;
 import sh.ball.graph.blocks.BlockDesigner;
 
 public class SliderBlock implements Block {
 
   private final Node node;
   private final Slider slider;
+  private final Node outputNode;
 
-  public SliderBlock(float min, float max, float value) {
+  public SliderBlock(double min, double max, double value) {
     slider = new Slider(min, max, value);
-    node = BlockDesigner.createNode(Paint.valueOf("blue"), "", 70, 20, slider);
+    outputNode = BlockDesigner.outputNodes(totalOutputs()).get(0);
+    node = BlockDesigner.createNode(Paint.valueOf("blue"), "", 70, 20, List.of(slider, outputNode));
   }
 
   @Override
-  public BlockData process() {
-    return new BlockData(slider.getValue());
+  public double process(int sampleNumber, int index) {
+    return slider.getValue();
   }
 
   @Override
@@ -30,7 +31,12 @@ public class SliderBlock implements Block {
   }
 
   @Override
-  public void addInput(Block block) {
+  public void setInput(Block block, int index) {
+    throw new IllegalStateException("ValueBlock doesn't have any inputs");
+  }
+
+  @Override
+  public void removeInput(int index) {
     throw new IllegalStateException("ValueBlock doesn't have any inputs");
   }
 
@@ -52,6 +58,16 @@ public class SliderBlock implements Block {
   @Override
   public Node getNode() {
     return node;
+  }
+
+  @Override
+  public List<Node> getInputNodes() {
+    return List.of();
+  }
+
+  @Override
+  public List<Node> getOutputNodes() {
+    return List.of(outputNode);
   }
 
   @Override

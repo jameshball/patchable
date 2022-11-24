@@ -6,22 +6,23 @@ import javafx.scene.control.Spinner;
 import javafx.scene.paint.Paint;
 import sh.ball.audio.engine.AudioDevice;
 import sh.ball.graph.blocks.Block;
-import sh.ball.graph.blocks.BlockData;
 import sh.ball.graph.blocks.BlockDesigner;
 
 public class SpinnerBlock implements Block {
 
   private final Node node;
   private final Spinner<Double> spinner;
+  private final Node outputNode;
 
-  public SpinnerBlock(float min, float max, float value, float increment) {
+  public SpinnerBlock(double min, double max, double value, double increment) {
     spinner = new Spinner<>(min, max, value, increment);
-    node = BlockDesigner.createNode(Paint.valueOf("blue"), "", 70, 20, spinner);
+    outputNode = BlockDesigner.outputNodes(totalOutputs()).get(0);
+    node = BlockDesigner.createNode(Paint.valueOf("blue"), "", 70, 20, List.of(spinner, outputNode));
   }
 
   @Override
-  public BlockData process() {
-    return new BlockData(spinner.getValue());
+  public double process(int sampleNumber, int index) {
+    return spinner.getValue();
   }
 
   @Override
@@ -30,8 +31,13 @@ public class SpinnerBlock implements Block {
   }
 
   @Override
-  public void addInput(Block block) {
-    throw new IllegalStateException("ValueBlock doesn't have any inputs");
+  public void setInput(Block block, int index) {
+    throw new IllegalStateException("SpinnerBlock doesn't have any inputs");
+  }
+
+  @Override
+  public void removeInput(int index) {
+    throw new IllegalStateException("SpinnerBlock doesn't have any inputs");
   }
 
   @Override
@@ -52,6 +58,16 @@ public class SpinnerBlock implements Block {
   @Override
   public Node getNode() {
     return node;
+  }
+
+  @Override
+  public List<Node> getInputNodes() {
+    return List.of();
+  }
+
+  @Override
+  public List<Node> getOutputNodes() {
+    return List.of(outputNode);
   }
 
   @Override
