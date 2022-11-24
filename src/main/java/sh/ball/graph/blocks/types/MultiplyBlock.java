@@ -1,28 +1,25 @@
 package sh.ball.graph.blocks.types;
 
+import java.util.List;
 import java.util.stream.Stream;
 import javafx.scene.Node;
 import javafx.scene.paint.Paint;
-
-import java.util.List;
 import sh.ball.audio.engine.AudioDevice;
 import sh.ball.graph.blocks.Block;
 import sh.ball.graph.blocks.BlockDesigner;
 
-public class SineBlock implements Block {
+public class MultiplyBlock implements Block {
 
-  private static final int DEFAULT_SAMPLE_RATE = 192000;
+  private Block leftInput = null;
+  private Block rightInput = null;
 
-  private Block input = null;
-  private double phase = 0;
-  private int sampleRate = DEFAULT_SAMPLE_RATE;
   private final List<Node> inputNodes;
   private final List<Node> outputNodes;
 
   private int previousSampleNumber = -1;
   private double buffer = 0;
 
-  public SineBlock() {
+  public MultiplyBlock() {
     inputNodes = BlockDesigner.inputNodes(totalInputs());
     outputNodes = BlockDesigner.outputNodes(totalOutputs());
   }
@@ -31,12 +28,14 @@ public class SineBlock implements Block {
   public double process(int sampleNumber, int index) {
     if (sampleNumber != previousSampleNumber) {
       previousSampleNumber = sampleNumber;
-      double frequency = 0;
-      if (input != null) {
-        frequency = input.process(sampleNumber, 0);
+      if (leftInput != null) {
+        buffer = leftInput.process(sampleNumber, 0);
+      } else {
+        buffer = 0;
       }
-      phase += frequency / sampleRate;
-      buffer = Math.sin(phase * 2 * Math.PI);
+      if (rightInput != null) {
+        buffer *= rightInput.process(sampleNumber, 0);
+      }
     }
 
     return buffer;
@@ -49,23 +48,34 @@ public class SineBlock implements Block {
 
   @Override
   public void setInput(Block block, int index) {
-    if (input != null) {
-      throw new IllegalStateException("SineBlock already has an input");
+    if (leftInput != null && rightInput != null) {
+      throw new IllegalStateException("MultiplyBlock already has an input");
     }
-    if (block.totalOutputs() != 1) {
-      throw new IllegalArgumentException("SineBlock only accepts blocks with 1 output");
+    if (index >= totalInputs()) {
+      throw new IllegalArgumentException("MultiplyBlock only has " + totalInputs() + " inputs");
     }
-    input = block;
+    if (index == 0) {
+      leftInput = block;
+    } else {
+      rightInput = block;
+    }
   }
 
   @Override
   public void removeInput(int index) {
-    input = null;
+    if (index >= totalInputs()) {
+      throw new IllegalArgumentException("MultiplyBlock only has " + totalInputs() + " inputs");
+    }
+    if (index == 0) {
+      leftInput = null;
+    } else {
+      rightInput = null;
+    }
   }
 
   @Override
   public int totalInputs() {
-    return 1;
+    return 2;
   }
 
   @Override
@@ -75,12 +85,12 @@ public class SineBlock implements Block {
 
   @Override
   public int currentInputs() {
-    return input == null ? 0 : input.totalOutputs();
+    return (leftInput == null ? 0 : 1) + (rightInput == null ? 0 : 1);
   }
 
   @Override
   public Node getNode() {
-    return BlockDesigner.createNode(Paint.valueOf("green"), "Sine", 70, 20, Stream.concat(inputNodes.stream(), outputNodes.stream()).toList());
+    return BlockDesigner.createNode(Paint.valueOf("green"), "Multiply", 70, 20, Stream.concat(inputNodes.stream(), outputNodes.stream()).toList());
   }
 
   @Override
@@ -95,6 +105,6 @@ public class SineBlock implements Block {
 
   @Override
   public void audioDeviceChanged(AudioDevice audioDevice) {
-    sampleRate = audioDevice.sampleRate();
+    // do nothing
   }
 }

@@ -1,43 +1,76 @@
 package sh.ball.graph.blocks.types;
 
-import com.sun.javafx.geom.RoundRectangle2D;
 import javafx.scene.Node;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Text;
 
 import java.util.List;
 import sh.ball.audio.engine.AudioDevice;
 import sh.ball.graph.blocks.Block;
-import sh.ball.graph.blocks.BlockData;
 import sh.ball.graph.blocks.BlockDesigner;
 
 public class ReturnBlock implements Block {
 
-  private Block input = null;
+  private Block leftInput = null;
+  private Block rightInput = null;
 
-  public ReturnBlock() {}
+  private int previousSampleNumber = -1;
+  private final double[] buffer = new double[totalOutputs()];
+
+  private final List<Node> inputNodes;
+
+  public ReturnBlock() {
+    inputNodes = BlockDesigner.inputNodes(totalInputs());
+  }
 
   @Override
-  public BlockData process() {
-    if (input == null) {
-      return new BlockData();
+  public double process(int sampleNumber, int index) {
+    if (sampleNumber != previousSampleNumber) {
+      previousSampleNumber = sampleNumber;
+      if (leftInput != null) {
+        buffer[0] = leftInput.process(sampleNumber, 0);
+      } else {
+        buffer[0] = 0;
+      }
+      if (rightInput != null) {
+        buffer[1] = rightInput.process(sampleNumber, 0);
+      } else {
+        buffer[1] = 0;
+      }
     }
-    return input.process();
+
+    return buffer[index];
   }
 
   @Override
   public List<Block> getInputs() {
-    return List.of(input);
+    return List.of(leftInput);
   }
 
   @Override
-  public void addInput(Block block) {
-    if (input != null) {
+  public void setInput(Block block, int index) {
+    if (leftInput != null && rightInput != null) {
       throw new IllegalStateException("ReturnBlock already has an input");
     }
-    input = block;
+    if (index >= totalInputs()) {
+      throw new IllegalArgumentException("ReturnBlock only has " + totalInputs() + " inputs");
+    }
+    if (index == 0) {
+      leftInput = block;
+    } else {
+      rightInput = block;
+    }
+  }
+
+  @Override
+  public void removeInput(int index) {
+    if (index >= totalInputs()) {
+      throw new IllegalArgumentException("ReturnBlock only has " + totalInputs() + " inputs");
+    }
+    if (index == 0) {
+      leftInput = null;
+    } else {
+      rightInput = null;
+    }
   }
 
   @Override
@@ -52,12 +85,22 @@ public class ReturnBlock implements Block {
 
   @Override
   public int currentInputs() {
-    return input == null ? 0 : input.totalOutputs();
+    return (leftInput == null ? 0 : 1) + (rightInput == null ? 0 : 1);
   }
 
   @Override
   public Node getNode() {
-    return BlockDesigner.createNode(Paint.valueOf("red"), "Return", 70, 20);
+    return BlockDesigner.createNode(Paint.valueOf("red"), "Return", 70, 20, inputNodes);
+  }
+
+  @Override
+  public List<Node> getInputNodes() {
+    return inputNodes;
+  }
+
+  @Override
+  public List<Node> getOutputNodes() {
+    return List.of();
   }
 
   @Override
