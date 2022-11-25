@@ -7,8 +7,8 @@ import sh.ball.audio.engine.AudioDeviceListener;
 
 public interface Block extends AudioDeviceListener {
   double process(int sampleNumber, int index);
-  List<Block> getInputs();
-  void setInput(Block block, int index);
+  List<BlockInput> getInputs();
+  void setInput(BlockInput input, int index);
   void removeInput(int index);
   int totalInputs();
   int totalOutputs();

@@ -26,6 +26,7 @@ import sh.ball.graph.blocks.Block;
 
 import java.util.ArrayList;
 import java.util.List;
+import sh.ball.graph.blocks.BlockInput;
 import sh.ball.graph.blocks.types.AddBlock;
 import sh.ball.graph.blocks.types.MultiplyBlock;
 import sh.ball.graph.blocks.types.SineBlock;
@@ -46,6 +47,7 @@ public class GraphController {
   private int blockIndex = -1;
   private Line cable;
   private Block returnBlock;
+  private int outputIndex = -1;
 
 
   public GraphController(Group group, ContextMenu contextMenu, AudioEngine audioEngine) {
@@ -101,14 +103,18 @@ public class GraphController {
         for (int i = 0; i < blocks.size(); i++) {
           Block other = blocks.get(i);
           List<Node> outputs = other.getOutputNodes();
-          for (Node output : outputs) {
+          for (int j = 0; j < outputs.size(); j++) {
+            Node output = outputs.get(j);
             Point2D mouse = output.sceneToLocal(event.getSceneX(), event.getSceneY());
             if (output.contains(mouse)) {
               Bounds bounds = output.getBoundsInParent();
               blockIndex = i;
+              outputIndex = j;
               cable = new Line(0, 0, event.getSceneX(), event.getSceneY());
-              cable.startXProperty().bind(output.getParent().layoutXProperty().add(bounds.getCenterX()));
-              cable.startYProperty().bind(output.getParent().layoutYProperty().add(bounds.getCenterY()));
+              cable.startXProperty()
+                  .bind(output.getParent().layoutXProperty().add(bounds.getCenterX()));
+              cable.startYProperty()
+                  .bind(output.getParent().layoutYProperty().add(bounds.getCenterY()));
               group.getChildren().add(cable);
               break;
             }
@@ -155,11 +161,12 @@ public class GraphController {
                   Block startBlock = blocks.get(blockIndex);
                   Block endBlock = blocks.get(i);
                   if (endBlock.currentInputs() < endBlock.totalInputs()) {
-                    endBlock.setInput(startBlock, j);
+                    endBlock.setInput(new BlockInput(startBlock, outputIndex), j);
                     connected = true;
                     inputToCableMap.put(input, cable);
                     cable = null;
                     blockIndex = -1;
+                    outputIndex = -1;
                   }
                 } else {
                   // remove the input from the block
