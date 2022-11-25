@@ -1,3 +1,7 @@
+- 1.2.1
+  - Massively simplify all code for Blocks
+  - Correctly index outputs for blocks with multiple outputs
+
 - 1.2.0
   - Add AddBlock
   - Add MultiplyBlock
