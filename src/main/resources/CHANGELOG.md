@@ -1,3 +1,9 @@
+- 1.4.0
+  - Update design of blocks, inputs and outputs
+  - Change how blocks are moved around
+    - Instead of holding Ctrl, just click and drag with right click
+  - Allow clicking and dragging with right click to select multiple blocks at a time and move them
+
 - 1.3.0
   - Add `.patchable` project files, allowing you to save and load the state of your patch
   - Currently, the file name is `project.patchable` and is saved with Ctrl+S and loaded with Ctrl+O

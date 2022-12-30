@@ -6,7 +6,7 @@
 
     <groupId>sh.ball</groupId>
     <artifactId>patchable</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
 
     <name>patchable</name>
 
@@ -14,7 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>19</maven.compiler.release>
         <javafx.version>19</javafx.version>
-        <appMainClass>sh.ball.gui.Launcher</appMainClass>
+        <appMainClass>sh.ball.patchable.gui.Launcher</appMainClass>
     </properties>
 
     <build>
