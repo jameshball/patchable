@@ -1,3 +1,7 @@
+- 1.3.0
+  - Add `.patchable` project files, allowing you to save and load the state of your patch
+  - Currently, the file name is `project.patchable` and is saved with Ctrl+S and loaded with Ctrl+O
+
 - 1.2.1
   - Massively simplify all code for Blocks
   - Correctly index outputs for blocks with multiple outputs
