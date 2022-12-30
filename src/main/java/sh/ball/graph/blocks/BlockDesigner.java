@@ -37,6 +37,7 @@ public class BlockDesigner {
       output.setTranslateX(1.25 * INPUT_WIDTH * i - width / 2);
       StackPane.setAlignment(output, Pos.BOTTOM_CENTER);
       nodes.add(output);
+
     }
     return nodes;
   }

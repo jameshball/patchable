@@ -3,6 +3,7 @@
 /logs
 osci-render.iml
 *.osci
+*.patchable
 *.log
 .DS_Store
 

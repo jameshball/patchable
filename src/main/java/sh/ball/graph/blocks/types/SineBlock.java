@@ -25,4 +25,9 @@ public class SineBlock extends BasicBlock {
   public void audioDeviceChanged(AudioDevice audioDevice) {
     sampleRate = audioDevice.sampleRate();
   }
+
+  @Override
+  public String type() {
+    return "sine";
+  }
 }

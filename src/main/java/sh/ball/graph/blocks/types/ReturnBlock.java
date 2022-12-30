@@ -14,4 +14,9 @@ public class ReturnBlock extends BasicBlock {
   public List<Node> getOutputNodes() {
     return List.of();
   }
+
+  @Override
+  public String type() {
+    return "return";
+  }
 }

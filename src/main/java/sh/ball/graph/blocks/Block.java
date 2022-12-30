@@ -3,17 +3,22 @@ package sh.ball.graph.blocks;
 import javafx.scene.Node;
 
 import java.util.List;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import sh.ball.audio.engine.AudioDeviceListener;
 
 public interface Block extends AudioDeviceListener {
   double process(int sampleNumber, int index);
-  List<BlockInput> getInputs();
-  void setInput(BlockInput input, int index);
-  void removeInput(int index);
+  List<BlockConnection> getInputs();
+  void setInput(BlockConnection input);
+  BlockConnection removeInput(int index);
   int totalInputs();
   int totalOutputs();
   int currentInputs();
   Node getNode();
   List<Node> getInputNodes();
   List<Node> getOutputNodes();
+  List<Element> save(Document document);
+  void load(Element root);
+  String type();
 }

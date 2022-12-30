@@ -7,4 +7,9 @@ public class AddBlock extends BasicBlock {
   public AddBlock() {
     super((inputs, outputs) -> outputs[0] = inputs[0] + inputs[1], 2, 1, Paint.valueOf("#ff0000"), "Add");
   }
+
+  @Override
+  public String type() {
+    return "add";
+  }
 }

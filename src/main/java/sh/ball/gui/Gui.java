@@ -71,6 +71,12 @@ public class Gui extends Application {
       if (e.isShiftDown()) {
         contextMenu.show(scene.getWindow(), stage.getX(), stage.getY() + stage.getHeight() / 2 - 20);
       }
+      if (e.isControlDown() && e.getCode().getName().equals("S")) {
+        graphView.save();
+      }
+      if (e.isControlDown() && e.getCode().getName().equals("O")) {
+        graphView.load();
+      }
     };
     scene.setOnKeyPressed(keyEventHandler);
     scene.setOnKeyReleased(keyEventHandler);

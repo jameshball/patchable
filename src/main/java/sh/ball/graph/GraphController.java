@@ -2,11 +2,14 @@ package sh.ball.graph;
 
 import static sh.ball.gui.Gui.logger;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Bounds;
@@ -26,9 +29,10 @@ import sh.ball.graph.blocks.Block;
 
 import java.util.ArrayList;
 import java.util.List;
-import sh.ball.graph.blocks.BlockInput;
+import sh.ball.graph.blocks.BlockConnection;
 import sh.ball.graph.blocks.types.AddBlock;
 import sh.ball.graph.blocks.types.MultiplyBlock;
+import sh.ball.graph.blocks.types.ReturnBlock;
 import sh.ball.graph.blocks.types.SineBlock;
 import sh.ball.graph.blocks.types.SliderBlock;
 import sh.ball.graph.blocks.types.SpinnerBlock;
@@ -37,10 +41,9 @@ public class GraphController {
 
   private final Group group;
   private final List<Block> blocks = new ArrayList<>();
-  private final List<Node> nodes = new ArrayList<>();
   private final AudioEngine audioEngine;
   private final Property<KeyEvent> keyEventProperty = new SimpleObjectProperty<>();
-  private final Map<Node, Node> inputToCableMap = new HashMap<>();
+  private final Map<BlockConnection, Node> inputToCableMap = new HashMap<>();
 
   private double offsetX;
   private double offsetY;
@@ -48,7 +51,6 @@ public class GraphController {
   private Line cable;
   private Block returnBlock;
   private int outputIndex = -1;
-
 
   public GraphController(Group group, ContextMenu contextMenu, AudioEngine audioEngine) {
     Menu newBlock = new Menu("New Block");
@@ -80,15 +82,41 @@ public class GraphController {
     this.group = group;
   }
 
-  public void setReturnBlock(Block block) {
-    this.returnBlock = block;
-    addBlock(block);
+  public void addConnection(BlockConnection connection) {
+    Line line = new Line();
+    int sourceIndex = connection.sourceIndex();
+    int destIndex = connection.destIndex();
+    List<Node> sourceOutputs = connection.source().getOutputNodes();
+    List<Node> destInputs = connection.dest().getInputNodes();
+
+    Node output = sourceOutputs.get(sourceIndex);
+    Node input = destInputs.get(destIndex);
+    Bounds inputBounds = input.getBoundsInParent();
+    connection.dest().setInput(connection);
+
+    output.boundsInParentProperty().addListener((observable, oldValue, outputBounds) -> {
+      line.startXProperty().bind(output.getParent().layoutXProperty().add(outputBounds.getCenterX()));
+      line.startYProperty().bind(output.getParent().layoutYProperty().add(outputBounds.getCenterY()));
+      line.endXProperty().bind(input.getParent().layoutXProperty().add(inputBounds.getCenterX()));
+      line.endYProperty().bind(input.getParent().layoutYProperty().add(inputBounds.getCenterY()));
+    });
+
+    group.getChildren().add(line);
+    inputToCableMap.put(connection, line);
   }
 
   public void addBlock(Block block) {
+    if (block.type().equals("return")) {
+      returnBlock = block;
+    }
+
     blocks.add(block);
     Node node = block.getNode();
-    nodes.add(node);
+
+    if (block.getOutputNodes().size() > 0) {
+      Node output = block.getOutputNodes().get(0);
+      Bounds outputBounds = output.getBoundsInParent();
+    }
     group.getChildren().add(node);
 
     node.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
@@ -161,9 +189,10 @@ public class GraphController {
                   Block startBlock = blocks.get(blockIndex);
                   Block endBlock = blocks.get(i);
                   if (endBlock.currentInputs() < endBlock.totalInputs()) {
-                    endBlock.setInput(new BlockInput(startBlock, outputIndex), j);
+                    BlockConnection blockConnection = new BlockConnection(startBlock, outputIndex, endBlock, j);
+                    endBlock.setInput(blockConnection);
                     connected = true;
-                    inputToCableMap.put(input, cable);
+                    inputToCableMap.put(blockConnection, cable);
                     cable = null;
                     blockIndex = -1;
                     outputIndex = -1;
@@ -171,8 +200,8 @@ public class GraphController {
                 } else {
                   // remove the input from the block
                   Block endBlock = blocks.get(i);
-                  endBlock.removeInput(j);
-                  Node cable = inputToCableMap.remove(input);
+                  BlockConnection blockConnection = endBlock.removeInput(j);
+                  Node cable = inputToCableMap.remove(blockConnection);
                   group.getChildren().remove(cable);
                 }
 
@@ -189,6 +218,32 @@ public class GraphController {
         }
       }
     });
+  }
+
+  public void save() {
+    GraphState graphState = new GraphState(blocks, new ArrayList<>(inputToCableMap.keySet()));
+    try {
+      graphState.save(new File("project.patchable"));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public void load() {
+    try {
+      group.getChildren().clear();
+      blocks.clear();
+      inputToCableMap.clear();
+      cable = null;
+      blockIndex = -1;
+      outputIndex = -1;
+
+      GraphState graphState = GraphState.load(new FileInputStream("project.patchable"));
+      graphState.blocks().forEach(this::addBlock);
+      graphState.connections().forEach(this::addConnection);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public void start() throws Exception {

@@ -28,7 +28,7 @@ public class GraphView {
     pane.setPrefWidth(300);
     pane.setPrefHeight(300);
 
-    controller.setReturnBlock(new ReturnBlock());
+    controller.addBlock(new ReturnBlock());
     controller.addBlock(new SineBlock());
     controller.addBlock(new SliderBlock(0, 1000, 440));
 
@@ -47,5 +47,13 @@ public class GraphView {
 
   public Parent getParent() {
     return pane;
+  }
+
+  public void save() {
+    controller.save();
+  }
+
+  public void load() {
+    controller.load();
   }
 }

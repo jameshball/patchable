@@ -1,21 +1,23 @@
 package sh.ball.graph.blocks.types;
 
-import com.sun.glass.ui.Clipboard;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 import javafx.scene.Node;
 import javafx.scene.paint.Paint;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import sh.ball.audio.engine.AudioDevice;
 import sh.ball.graph.blocks.Block;
 import sh.ball.graph.blocks.BlockDesigner;
-import sh.ball.graph.blocks.BlockInput;
+import sh.ball.graph.blocks.BlockConnection;
 import sh.ball.graph.blocks.BlockProcessor;
 
 public abstract class BasicBlock implements Block {
 
-  private final BlockInput[] inputs;
+  private Node node = null;
+  private final BlockConnection[] inputs;
   private final List<Node> inputNodes;
   private final List<Node> outputNodes;
   private final int totalInputs;
@@ -38,7 +40,7 @@ public abstract class BasicBlock implements Block {
     this.name = name;
     this.inputNodes = BlockDesigner.inputNodes(totalInputs);
     this.outputNodes = BlockDesigner.outputNodes(totalOutputs);
-    this.inputs = new BlockInput[totalInputs];
+    this.inputs = new BlockConnection[totalInputs];
     this.inputBuffer = new double[totalInputs];
     this.outputBuffer = new double[totalOutputs];
   }
@@ -61,7 +63,7 @@ public abstract class BasicBlock implements Block {
       previousSampleNumber = sampleNumber;
       for (int i = 0; i < totalInputs(); i++) {
         if (inputs[i] != null) {
-          inputBuffer[i] = inputs[i].block().process(sampleNumber, inputs[i].index());
+          inputBuffer[i] = inputs[i].source().process(sampleNumber, inputs[i].sourceIndex());
         } else {
           inputBuffer[i] = 0;
         }
@@ -73,27 +75,30 @@ public abstract class BasicBlock implements Block {
   }
 
   @Override
-  public List<BlockInput> getInputs() {
+  public List<BlockConnection> getInputs() {
     return List.of(inputs);
   }
 
   @Override
-  public void setInput(BlockInput input, int index) {
+  public void setInput(BlockConnection connection) {
+    int index = connection.destIndex();
     if (index >= totalInputs()) {
       throw new IllegalArgumentException("Block only has " + totalInputs() + " inputs");
     }
     if (inputs[index] != null) {
       throw new IllegalStateException("Block already has an input at index " + index);
     }
-    inputs[index] = input;
+    inputs[index] = connection;
   }
 
   @Override
-  public void removeInput(int index) {
+  public BlockConnection removeInput(int index) {
     if (index >= totalInputs()) {
       throw new IllegalArgumentException("AddBlock only has " + totalInputs() + " inputs");
     }
+    BlockConnection input = inputs[index];
     inputs[index] = null;
+    return input;
   }
 
   @Override
@@ -113,8 +118,11 @@ public abstract class BasicBlock implements Block {
 
   @Override
   public Node getNode() {
-    Stream<Node> nodeStream = Stream.concat(Stream.concat(getInputNodes().stream(), getOutputNodes().stream()), nodes.stream());
-    return BlockDesigner.createNode(color, name, 70, 20, nodeStream.toList());
+    if (node == null) {
+      Stream<Node> nodeStream = Stream.concat(Stream.concat(getInputNodes().stream(), getOutputNodes().stream()), nodes.stream());
+      node = BlockDesigner.createNode(color, name, 70, 20, nodeStream.toList());
+    }
+    return node;
   }
 
   @Override
@@ -130,5 +138,14 @@ public abstract class BasicBlock implements Block {
   @Override
   public void audioDeviceChanged(AudioDevice audioDevice) {
     this.device = audioDevice;
+  }
+
+  @Override
+  public List<Element> save(Document document) {
+    return List.of();
+  }
+
+  @Override
+  public void load(Element root) {
   }
 }
