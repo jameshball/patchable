@@ -5,12 +5,13 @@ import javafx.scene.control.Slider;
 import javafx.scene.paint.Paint;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import sh.ball.patchable.graph.blocks.BlockPort;
 
 public class SliderBlock extends BasicBlock {
   private final Slider slider;
 
   public SliderBlock(double min, double max, double value) {
-    super(0, 1, Paint.valueOf("#00008E"), "", 100, 0);
+    super(List.of(), List.of(new BlockPort("Slider value")), Paint.valueOf("#00008E"), "", 100, 0);
     slider = new Slider(min, max, value);
     addNode(slider);
     setProcessor((inputs, outputs) -> outputs[0] = slider.getValue());

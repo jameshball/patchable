@@ -18,16 +18,17 @@ import sh.ball.patchable.audio.engine.AudioDevice;
 import sh.ball.patchable.graph.blocks.Block;
 import sh.ball.patchable.graph.blocks.BlockDesigner;
 import sh.ball.patchable.graph.blocks.BlockConnection;
+import sh.ball.patchable.graph.blocks.BlockPort;
 import sh.ball.patchable.graph.blocks.BlockProcessor;
 
 public abstract class BasicBlock implements Block {
 
+  private final List<BlockPort> inputPorts;
+  private final List<BlockPort> outputPorts;
   private Node node = null;
   private final BlockConnection[] inputs;
   private final List<Node> inputNodes;
   private final List<Node> outputNodes;
-  private final int totalInputs;
-  private final int totalOutputs;
   private final double[] inputBuffer;
   private final double[] outputBuffer;
   private final Paint color;
@@ -40,31 +41,31 @@ public abstract class BasicBlock implements Block {
   private int previousSampleNumber = -1;
   protected AudioDevice device;
 
-  public BasicBlock(BlockProcessor processor, int totalInputs, int totalOutputs, Paint color, String name) {
-    this(processor, totalInputs, totalOutputs, color, name, 40, 0);
+  public BasicBlock(BlockProcessor processor, List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name) {
+    this(processor, inputPorts, outputPorts, color, name, 40, 0);
   }
 
-  public BasicBlock(BlockProcessor processor, int totalInputs, int totalOutputs, Paint color, String name, double minWidth, double minHeight) {
+  public BasicBlock(BlockProcessor processor, List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name, double minWidth, double minHeight) {
     this.processor = processor;
-    this.totalInputs = totalInputs;
-    this.totalOutputs = totalOutputs;
     this.color = color;
     this.name = name;
-    this.inputNodes = BlockDesigner.inputNodes(totalInputs);
-    this.outputNodes = BlockDesigner.outputNodes(totalOutputs);
-    this.inputs = new BlockConnection[totalInputs];
-    this.inputBuffer = new double[totalInputs];
-    this.outputBuffer = new double[totalOutputs];
+    this.inputPorts = inputPorts;
+    this.outputPorts = outputPorts;
+    this.inputNodes = BlockDesigner.inputNodes(inputPorts);
+    this.outputNodes = BlockDesigner.outputNodes(outputPorts);
+    this.inputs = new BlockConnection[inputPorts.size()];
+    this.inputBuffer = new double[inputPorts.size()];
+    this.outputBuffer = new double[outputPorts.size()];
     this.minWidth = minWidth;
     this.minHeight = minHeight;
   }
 
-  public BasicBlock(int totalInputs, int totalOutputs, Paint color, String name) {
-    this(null, totalInputs, totalOutputs, color, name);
+  public BasicBlock(List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name) {
+    this(null, inputPorts, outputPorts, color, name);
   }
 
-  public BasicBlock(int totalInputs, int totalOutputs, Paint color, String name, double minWidth, double minHeight) {
-    this(null, totalInputs, totalOutputs, color, name, minWidth, minHeight);
+  public BasicBlock(List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name, double minWidth, double minHeight) {
+    this(null, inputPorts, outputPorts, color, name, minWidth, minHeight);
   }
 
   public void setProcessor(BlockProcessor processor) {
@@ -121,12 +122,12 @@ public abstract class BasicBlock implements Block {
 
   @Override
   public int totalInputs() {
-    return totalInputs;
+    return inputPorts.size();
   }
 
   @Override
   public int totalOutputs() {
-    return totalOutputs;
+    return outputPorts.size();
   }
 
   @Override
