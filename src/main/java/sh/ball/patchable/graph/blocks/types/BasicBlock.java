@@ -111,6 +111,14 @@ public abstract class BasicBlock implements Block {
   }
 
   @Override
+  public BlockConnection getInput(int index) {
+    if (index >= totalInputs()) {
+      throw new IllegalArgumentException("AddBlock only has " + totalInputs() + " inputs");
+    }
+    return inputs[index];
+  }
+
+  @Override
   public BlockConnection removeInput(int index) {
     if (index >= totalInputs()) {
       throw new IllegalArgumentException("AddBlock only has " + totalInputs() + " inputs");
