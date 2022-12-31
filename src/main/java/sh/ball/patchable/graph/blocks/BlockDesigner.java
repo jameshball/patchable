@@ -19,15 +19,35 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
-import javafx.stage.Popup;
 
 public class BlockDesigner {
 
   private static final int INPUT_WIDTH = 10;
 
-  public static List<Node> inputNodes(int totalInputs) {
+  private static void addPopup(BlockPort port, Node node) {
+    PopupControl popup = new PopupControl();
+    Pane popupContent = new Pane();
+    popupContent.setBackground(new Background(new BackgroundFill(Paint.valueOf("black"), new CornerRadii(INPUT_WIDTH / 2.0), Insets.EMPTY)));
+    popupContent.setBorder(new Border(new BorderStroke(Paint.valueOf("white"), BorderStrokeStyle.SOLID, new CornerRadii(INPUT_WIDTH / 2.0), new BorderWidths(1))));
+
+    Label label = new Label(port.name());
+    label.setTextFill(Paint.valueOf("white"));
+    label.setPadding(new Insets(2, 5, 2, 5));
+    popupContent.getChildren().add(label);
+    popup.getScene().setRoot(popupContent);
+
+    popup.setAutoHide(true);
+    node.setOnMouseEntered(e -> popup.show(node, e.getScreenX(), e.getScreenY()));
+    node.setOnMouseExited(e -> popup.hide());
+    node.setOnMouseMoved(e -> {
+      popup.setX(e.getScreenX() + 10);
+      popup.setY(e.getScreenY() - 5);
+    });
+  }
+
+  public static List<Node> inputNodes(List<BlockPort> inputs) {
     List<Node> nodes = new ArrayList<>();
-    for (int i = 0; i < totalInputs; i++) {
+    for (BlockPort port : inputs) {
       Region input = new Region();
       input.setBackground(new Background(new BackgroundFill(Paint.valueOf("black"), new CornerRadii(INPUT_WIDTH), Insets.EMPTY)));
       input.setBorder(new Border(new BorderStroke(Paint.valueOf("white"), BorderStrokeStyle.SOLID, new CornerRadii(INPUT_WIDTH), new BorderWidths(1))));
@@ -35,37 +55,22 @@ public class BlockDesigner {
       input.setMinHeight(INPUT_WIDTH);
       nodes.add(input);
 
-      PopupControl popup = new PopupControl();
-      Pane popupContent = new Pane();
-      popupContent.setBackground(new Background(new BackgroundFill(Paint.valueOf("black"), new CornerRadii(INPUT_WIDTH / 2.0), Insets.EMPTY)));
-      popupContent.setBorder(new Border(new BorderStroke(Paint.valueOf("white"), BorderStrokeStyle.SOLID, new CornerRadii(INPUT_WIDTH / 2.0), new BorderWidths(1))));
-
-      Label label = new Label("Input " + i);
-      label.setTextFill(Paint.valueOf("white"));
-      label.setPadding(new Insets(2, 5, 2, 5));
-      popupContent.getChildren().add(label);
-      popup.getScene().setRoot(popupContent);
-
-      popup.setAutoHide(true);
-      input.setOnMouseEntered(e -> popup.show(input, e.getScreenX(), e.getScreenY()));
-      input.setOnMouseExited(e -> popup.hide());
-      input.setOnMouseMoved(e -> {
-        popup.setX(e.getScreenX() + 10);
-        popup.setY(e.getScreenY() - 5);
-      });
+      addPopup(port, input);
     }
     return nodes;
   }
 
-  public static List<Node> outputNodes(int totalOutputs) {
+  public static List<Node> outputNodes(List<BlockPort> outputs) {
     List<Node> nodes = new ArrayList<>();
-    for (int i = 0; i < totalOutputs; i++) {
+    for (BlockPort port : outputs) {
       Region output = new Region();
       output.setBackground(new Background(new BackgroundFill(Paint.valueOf("white"), new CornerRadii(INPUT_WIDTH), new Insets(1))));
       output.setBorder(new Border(new BorderStroke(Paint.valueOf("black"), BorderStrokeStyle.SOLID, new CornerRadii(INPUT_WIDTH), new BorderWidths(1))));
       output.setMinWidth(INPUT_WIDTH);
       output.setMinHeight(INPUT_WIDTH);
       nodes.add(output);
+
+      addPopup(port, output);
     }
     return nodes;
   }

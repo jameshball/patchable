@@ -1,8 +1,10 @@
 package sh.ball.patchable.graph.blocks.types;
 
+import java.util.List;
 import javafx.scene.paint.Paint;
 
 import sh.ball.patchable.audio.engine.AudioDevice;
+import sh.ball.patchable.graph.blocks.BlockPort;
 
 public class SineBlock extends BasicBlock {
 
@@ -11,7 +13,12 @@ public class SineBlock extends BasicBlock {
   private int sampleRate = DEFAULT_SAMPLE_RATE;
 
   public SineBlock() {
-    super(1, 1, Paint.valueOf("#006700"), "Sine");
+    super(
+        List.of(new BlockPort("Frequency")),
+        List.of(new BlockPort("Sine value")),
+        Paint.valueOf("#006700"),
+        "Sine"
+    );
     setProcessor((inputs, outputs) -> {
       double frequency = inputs[0];
       phase += frequency / sampleRate;
