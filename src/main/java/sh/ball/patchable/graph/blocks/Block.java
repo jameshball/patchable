@@ -11,6 +11,7 @@ public interface Block extends AudioDeviceListener {
   double process(int sampleNumber, int index);
   List<BlockConnection> getInputs();
   void setInput(BlockConnection input);
+  BlockConnection getInput(int index);
   BlockConnection removeInput(int index);
   int totalInputs();
   int totalOutputs();

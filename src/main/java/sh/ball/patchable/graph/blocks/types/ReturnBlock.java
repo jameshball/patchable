@@ -14,7 +14,7 @@ public class ReturnBlock extends BasicBlock {
         List.of(new BlockPort("Left channel"), new BlockPort("Right channel")),
         List.of(new BlockPort("Left channel"), new BlockPort("Right channel")),
         Paint.valueOf("#333333"),
-        "Return"
+        "Output"
     );
   }
   @Override

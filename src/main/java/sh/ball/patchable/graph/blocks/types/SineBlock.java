@@ -14,15 +14,16 @@ public class SineBlock extends BasicBlock {
 
   public SineBlock() {
     super(
-        List.of(new BlockPort("Frequency")),
+        List.of(new BlockPort("Frequency"), new BlockPort("Phase offset")),
         List.of(new BlockPort("Sine value")),
         Paint.valueOf("#006700"),
         "Sine"
     );
     setProcessor((inputs, outputs) -> {
       double frequency = inputs[0];
+      double phaseOffset = inputs[1];
       phase += frequency / sampleRate;
-      outputs[0] = Math.sin(phase * 2 * Math.PI);
+      outputs[0] = Math.sin(phase * 2 * Math.PI + phaseOffset * 2 * Math.PI);
     });
   }
 

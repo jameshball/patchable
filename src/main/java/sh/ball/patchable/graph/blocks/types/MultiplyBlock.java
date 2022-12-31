@@ -10,7 +10,7 @@ public class MultiplyBlock extends BasicBlock {
     super(
         (inputs, outputs) -> outputs[0] = inputs[0] * inputs[1],
         List.of(new BlockPort("A"), new BlockPort("B")),
-        List.of(new BlockPort("A * B")),
+        List.of(new BlockPort("A × B")),
         Paint.valueOf("#AA0000"),
         "Multiply"
     );

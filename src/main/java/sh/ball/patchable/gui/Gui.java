@@ -68,22 +68,8 @@ public class Gui extends Application {
     stage.setScene(scene);
     stage.show();
 
-    EventHandler<KeyEvent> keyEventHandler = e -> {
-      if (e.isShiftDown()) {
-        contextMenu.show(scene.getWindow(), stage.getX(), stage.getY() + stage.getHeight() / 2 - 20);
-      }
-      if (e.isControlDown() && e.getCode().getName().equals("S")) {
-        graphView.save();
-      }
-      if (e.isControlDown() && e.getCode().getName().equals("O")) {
-        graphView.load();
-      }
-      if (e.getCode().getName().equals("Esc")) {
-        graphView.deselectAll();
-      }
-    };
-    scene.setOnKeyPressed(keyEventHandler);
-    scene.setOnKeyReleased(keyEventHandler);
+    scene.setOnKeyPressed(graphView.keyEventHandler(stage, scene));
+    scene.setOnKeyReleased(graphView.keyEventHandler(stage, scene));
 
     stage.setOnCloseRequest(t -> {
       Platform.exit();

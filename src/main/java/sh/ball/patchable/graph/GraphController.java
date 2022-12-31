@@ -53,9 +53,7 @@ public class GraphController {
   private final AudioEngine audioEngine;
   private final Map<BlockConnection, Node> inputToCableMap = new HashMap<>();
 
-  private double offsetX;
-  private double offsetY;
-  private int blockIndex = -1;
+  private Block startBlock;
   private Line cable;
   private Rectangle selectionRectangle;
   private Block returnBlock;
@@ -100,6 +98,7 @@ public class GraphController {
     pane.getChildren().add(0, subPane);
 
     subPane.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+      deselectAll();
       if (event.isSecondaryButtonDown()) {
         selectionRectangle = new Rectangle();
         selectionRectangle.setStroke(Paint.valueOf("white"));
@@ -128,7 +127,6 @@ public class GraphController {
     });
 
     subPane.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
-      deselectAll();
       if (event.getButton() == MouseButton.SECONDARY) {
         if (selectionRectangle != null) {
           for (Block block : blocks) {
@@ -136,9 +134,7 @@ public class GraphController {
             Bounds blockBounds = node.localToScene(node.getBoundsInLocal());
             Bounds selectionBounds = selectionRectangle.localToScene(selectionRectangle.getBoundsInLocal());
             if (selectionBounds.intersects(blockBounds)) {
-              selectedBlocks.add(block);
-              node.setEffect(new ColorAdjust(0, 0, 0.5, 0));
-              node.setCursor(Cursor.MOVE);
+              selectBlock(block);
             }
           }
           group.getChildren().remove(selectionRectangle);
@@ -146,6 +142,12 @@ public class GraphController {
         }
       }
     });
+  }
+
+  private void selectBlock(Block block) {
+    selectedBlocks.add(block);
+    block.getNode().setEffect(new ColorAdjust(0, 0, 0.5, 0));
+    block.getNode().setCursor(Cursor.MOVE);
   }
 
   public void addConnection(BlockConnection connection) {
@@ -178,26 +180,22 @@ public class GraphController {
     inputToCableMap.put(connection, line);
   }
 
-  private void checkForConnectionStart(MouseEvent event) {
-    // check if we're over a node
-    for (int i = 0; i < blocks.size(); i++) {
-      Block other = blocks.get(i);
-      List<Node> outputs = other.getOutputNodes();
-      for (int j = 0; j < outputs.size(); j++) {
-        Node output = outputs.get(j);
-        Point2D mouse = output.sceneToLocal(event.getSceneX(), event.getSceneY());
-        if (output.contains(mouse)) {
-          Bounds bounds = other.getNode().sceneToLocal(output.localToScene(output.getBoundsInLocal()));
-          blockIndex = i;
-          outputIndex = j;
-          cable = new Line(0, 0, event.getSceneX(), event.getSceneY());
-          cable.startXProperty()
-              .bind(other.getNode().layoutXProperty().add(bounds.getCenterX()));
-          cable.startYProperty()
-              .bind(other.getNode().layoutYProperty().add(bounds.getCenterY()));
-          group.getChildren().add(cable);
-          break;
-        }
+  private void checkForConnectionStart(Block block, MouseEvent event) {
+    List<Node> outputs = block.getOutputNodes();
+    for (int j = 0; j < outputs.size(); j++) {
+      Node output = outputs.get(j);
+      Point2D mouse = output.sceneToLocal(event.getSceneX(), event.getSceneY());
+      if (output.contains(mouse)) {
+        Bounds bounds = block.getNode().sceneToLocal(output.localToScene(output.getBoundsInLocal()));
+        startBlock = block;
+        outputIndex = j;
+        cable = new Line(0, 0, event.getSceneX(), event.getSceneY());
+        cable.startXProperty()
+            .bind(block.getNode().layoutXProperty().add(bounds.getCenterX()));
+        cable.startYProperty()
+            .bind(block.getNode().layoutYProperty().add(bounds.getCenterY()));
+        group.getChildren().add(cable);
+        break;
       }
     }
   }
@@ -205,10 +203,9 @@ public class GraphController {
   private void checkForConnectionEnd(MouseEvent event) {
     boolean connected = false;
     // check if we're over a node
-    for (int i = 0; i < blocks.size(); i++) {
-      if (blockIndex != i) {
-        Block other = blocks.get(i);
-        List<Node> inputs = other.getInputNodes();
+    for (Block endBlock : blocks) {
+      if (startBlock != endBlock) {
+        List<Node> inputs = endBlock.getInputNodes();
         for (int j = 0; j < inputs.size(); j++) {
           Node input = inputs.get(j);
           Point2D mouse = input.sceneToLocal(event.getSceneX(), event.getSceneY());
@@ -216,25 +213,24 @@ public class GraphController {
             if (cable != null) {
               Bounds endBounds = input.getBoundsInParent();
 
-              Block startBlock = blocks.get(blockIndex);
-              Block endBlock = blocks.get(i);
-
               // bind the cable to the other node
-              cable.endXProperty().bind(endBlock.getNode().layoutXProperty().add(endBounds.getCenterX()));
-              cable.endYProperty().bind(endBlock.getNode().layoutYProperty().add(endBounds.getCenterY()));
+              cable.endXProperty()
+                  .bind(endBlock.getNode().layoutXProperty().add(endBounds.getCenterX()));
+              cable.endYProperty()
+                  .bind(endBlock.getNode().layoutYProperty().add(endBounds.getCenterY()));
 
               if (endBlock.currentInputs() < endBlock.totalInputs()) {
-                BlockConnection blockConnection = new BlockConnection(startBlock, outputIndex, endBlock, j);
+                BlockConnection blockConnection = new BlockConnection(startBlock, outputIndex,
+                    endBlock, j);
                 endBlock.setInput(blockConnection);
                 connected = true;
                 inputToCableMap.put(blockConnection, cable);
                 cable = null;
-                blockIndex = -1;
+                startBlock = null;
                 outputIndex = -1;
               }
             } else {
               // remove the input from the block
-              Block endBlock = blocks.get(i);
               BlockConnection blockConnection = endBlock.removeInput(j);
               Node cable = inputToCableMap.remove(blockConnection);
               group.getChildren().remove(cable);
@@ -251,6 +247,15 @@ public class GraphController {
       group.getChildren().remove(cable);
       cable = null;
     }
+  }
+
+  private void selectSingleBlock(Block block, MouseEvent event) {
+    deselectAll();
+    selectedOffsetsX.clear();
+    selectedOffsetsY.clear();
+    selectBlock(block);
+    selectedOffsetsX.add(event.getSceneX() - block.getNode().getLayoutX());
+    selectedOffsetsY.add(event.getSceneY() - block.getNode().getLayoutY());
   }
 
   public void addBlock(Block block) {
@@ -270,12 +275,16 @@ public class GraphController {
           selectedOffsetsX.add(event.getSceneX() - selectedBlock.getNode().getLayoutX());
           selectedOffsetsY.add(event.getSceneY() - selectedBlock.getNode().getLayoutY());
         }
-      }
-      if (event.isSecondaryButtonDown() && !selectedBlocks.contains(block)) {
-        offsetX = event.getSceneX() - node.getLayoutX();
-        offsetY = event.getSceneY() - node.getLayoutY();
-        checkForConnectionStart(event);
         event.consume();
+      }
+      if (event.isPrimaryButtonDown() && !selectedBlocks.contains(block)) {
+        checkForConnectionStart(block, event);
+      }
+      if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
+        selectSingleBlock(block, event);
+      }
+      if (!selectedBlocks.contains(block)) {
+        deselectAll();
       }
     });
 
@@ -286,21 +295,25 @@ public class GraphController {
           selectedBlock.getNode().setLayoutX(event.getSceneX() - selectedOffsetsX.get(i));
           selectedBlock.getNode().setLayoutY(event.getSceneY() - selectedOffsetsY.get(i));
         }
-      }
-      if (event.isSecondaryButtonDown() && !selectedBlocks.contains(block)) {
-        if (cable != null) {
-          cable.setEndX(event.getSceneX());
-          cable.setEndY(event.getSceneY());
-        } else {
-          node.setLayoutX(event.getSceneX() - offsetX);
-          node.setLayoutY(event.getSceneY() - offsetY);
-        }
         event.consume();
       }
     });
 
+    block.getOutputNodes().forEach(output -> output.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
+      if (event.isPrimaryButtonDown() && !selectedBlocks.contains(block)) {
+        cable.setEndX(event.getSceneX());
+        cable.setEndY(event.getSceneY());
+      }
+    }));
+
     node.addEventFilter(MouseEvent.MOUSE_RELEASED, event -> {
       if (event.getButton() == MouseButton.SECONDARY) {
+        Point2D mouse = node.sceneToLocal(event.getSceneX(), event.getSceneY());
+        if (node.contains(mouse)) {
+          selectSingleBlock(block, event);
+        }
+      }
+      if (event.getButton() == MouseButton.PRIMARY) {
         checkForConnectionEnd(event);
       }
     });
@@ -321,7 +334,7 @@ public class GraphController {
       blocks.clear();
       inputToCableMap.clear();
       cable = null;
-      blockIndex = -1;
+      startBlock = null;
       outputIndex = -1;
 
       GraphState graphState = GraphState.load(new FileInputStream("project.patchable"));
@@ -351,5 +364,37 @@ public class GraphController {
       block.getNode().setEffect(null);
       block.getNode().setCursor(Cursor.DEFAULT);
     }
+  }
+
+  public void deleteSelected() {
+    for (Block block : selectedBlocks) {
+      if (!block.type().equals("return")) {
+        group.getChildren().remove(block.getNode());
+        blocks.remove(block);
+      }
+
+      // remove all connections to this block
+      for (int i = 0; i < block.totalInputs(); i++) {
+        BlockConnection blockConnection = block.removeInput(i);
+        if (blockConnection != null) {
+          Node cable = inputToCableMap.remove(blockConnection);
+          group.getChildren().remove(cable);
+        }
+      }
+
+      // remove all connections from this block by looking at the other blocks
+      for (Block otherBlock : blocks) {
+        for (int i = 0; i < otherBlock.totalInputs(); i++) {
+          BlockConnection blockConnection = otherBlock.getInput(i);
+          if (blockConnection != null && blockConnection.source().equals(block)) {
+            otherBlock.removeInput(i);
+            Node cable = inputToCableMap.remove(blockConnection);
+            group.getChildren().remove(cable);
+          }
+        }
+      }
+
+    }
+    selectedBlocks.clear();
   }
 }
