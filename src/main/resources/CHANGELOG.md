@@ -1,3 +1,10 @@
+- 1.5.0
+  - Add tooltip on inputs and outputs to make it clear what they are
+  - Allow selected blocks to be deleted with the delete key
+  - Removed right-click for movement and creating cables
+    - This has been replaced with the left-click and drag to make cables
+    - To move a block, you now select it with double-click or right-click, and then you can drag it
+
 - 1.4.0
   - Update design of blocks, inputs and outputs
   - Change how blocks are moved around
