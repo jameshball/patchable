@@ -64,6 +64,8 @@ public class GraphController {
   private double mouseDownY;
 
   public GraphController(Pane pane, Group group, ContextMenu contextMenu, AudioEngine audioEngine) {
+    pane.setId("main-pane");
+
     Menu newBlock = new Menu("New Block");
 
     Map<String, Callable<Block>> blockMap = Map.of(

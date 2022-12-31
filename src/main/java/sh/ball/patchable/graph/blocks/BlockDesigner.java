@@ -1,11 +1,11 @@
 package sh.ball.patchable.graph.blocks;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.PopupControl;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -13,11 +13,13 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Paint;
 import javafx.scene.text.Text;
+import javafx.stage.Popup;
 
 public class BlockDesigner {
 
@@ -32,6 +34,25 @@ public class BlockDesigner {
       input.setMinWidth(INPUT_WIDTH);
       input.setMinHeight(INPUT_WIDTH);
       nodes.add(input);
+
+      PopupControl popup = new PopupControl();
+      Pane popupContent = new Pane();
+      popupContent.setBackground(new Background(new BackgroundFill(Paint.valueOf("black"), new CornerRadii(INPUT_WIDTH / 2.0), Insets.EMPTY)));
+      popupContent.setBorder(new Border(new BorderStroke(Paint.valueOf("white"), BorderStrokeStyle.SOLID, new CornerRadii(INPUT_WIDTH / 2.0), new BorderWidths(1))));
+
+      Label label = new Label("Input " + i);
+      label.setTextFill(Paint.valueOf("white"));
+      label.setPadding(new Insets(2, 5, 2, 5));
+      popupContent.getChildren().add(label);
+      popup.getScene().setRoot(popupContent);
+
+      popup.setAutoHide(true);
+      input.setOnMouseEntered(e -> popup.show(input, e.getScreenX(), e.getScreenY()));
+      input.setOnMouseExited(e -> popup.hide());
+      input.setOnMouseMoved(e -> {
+        popup.setX(e.getScreenX() + 10);
+        popup.setY(e.getScreenY() - 5);
+      });
     }
     return nodes;
   }

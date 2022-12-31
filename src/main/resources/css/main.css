@@ -4,7 +4,6 @@
     very_dark: #111111;
     grey_color: #555555;
     accent_color: #00CC00;
-    -fx-background-color: dark_color;
     -fx-text-background-color: white;
     -fx-text-inner-color: white;
 }
@@ -172,6 +171,10 @@
 #control-pane, .titled-pane, .pane, .darkPane {
     -fx-background-color: darker_color;
     -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 0);
+}
+
+#main-pane {
+    -fx-background-color: dark_color;
 }
 
 .list-cell {
@@ -431,4 +434,8 @@
     -fx-border-width: 1;
     -fx-border-color: white;
     -fx-border-radius: 5;
+}
+
+.popup-menu {
+    -fx-background-color: transparent;
 }
