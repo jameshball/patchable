@@ -17,6 +17,7 @@ public interface Block extends AudioDeviceListener {
   void addOutput(BlockConnection connection);
   void addConnection(BlockConnection connection);
   BlockConnection getInput(int index);
+  void removeConnection(BlockConnection connection);
   BlockConnection removeInput(int index);
   void removeOutput(BlockConnection input);
   String type();

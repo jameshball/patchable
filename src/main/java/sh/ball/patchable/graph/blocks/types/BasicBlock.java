@@ -170,6 +170,23 @@ public abstract class BasicBlock implements Block {
   }
 
   @Override
+  public void removeConnection(BlockConnection connection) {
+    boolean inputConnection = connection.dest() == this;
+    boolean outputConnection = connection.source() == this;
+    if (!inputConnection && !outputConnection) {
+      throw new IllegalArgumentException("Connection must be either input or output");
+    }
+
+    if (inputConnection) {
+      removeInput(connection.destIndex());
+      connection.source().removeOutput(connection);
+    } else {
+      addOutput(connection);
+      connection.dest().removeInput(connection.destIndex());
+    }
+  }
+
+  @Override
   public BlockConnection removeInput(int index) {
     if (index >= totalInputs()) {
       throw new IllegalArgumentException("Block only has " + totalInputs() + " inputs");

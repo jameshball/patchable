@@ -238,12 +238,12 @@ public class GraphController {
               }
             } else {
               // remove the input from the block
-              BlockConnection blockConnection = endBlock.removeInput(j);
-              if (blockConnection != null) {
-                blockConnection.source().removeOutput(blockConnection);
+              BlockConnection connection = endBlock.getInput(j);
+              if (connection != null) {
+                endBlock.removeConnection(connection);
+                Node cable = inputToCableMap.remove(connection);
+                group.getChildren().remove(cable);
               }
-              Node cable = inputToCableMap.remove(blockConnection);
-              group.getChildren().remove(cable);
             }
 
             break;
@@ -385,10 +385,10 @@ public class GraphController {
 
       // remove all connections to this block
       for (int i = 0; i < block.totalInputs(); i++) {
-        BlockConnection blockConnection = block.removeInput(i);
-        if (blockConnection != null) {
-          blockConnection.source().removeOutput(blockConnection);
-          Node cable = inputToCableMap.remove(blockConnection);
+        BlockConnection connection = block.getInput(i);
+        if (connection != null) {
+          block.removeConnection(connection);
+          Node cable = inputToCableMap.remove(connection);
           group.getChildren().remove(cable);
         }
       }
@@ -396,13 +396,10 @@ public class GraphController {
       // remove all connections from this block by looking at the other blocks
       for (Block otherBlock : blocks) {
         for (int i = 0; i < otherBlock.totalInputs(); i++) {
-          BlockConnection blockConnection = otherBlock.getInput(i);
-          if (blockConnection != null && blockConnection.source().equals(block)) {
-            BlockConnection connection = otherBlock.removeInput(i);
-            if (connection != null) {
-              connection.source().removeOutput(connection);
-            }
-            Node cable = inputToCableMap.remove(blockConnection);
+          BlockConnection connection = otherBlock.getInput(i);
+          if (connection != null && connection.source().equals(block)) {
+            otherBlock.removeConnection(connection);
+            Node cable = inputToCableMap.remove(connection);
             group.getChildren().remove(cable);
           }
         }
