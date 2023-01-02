@@ -69,7 +69,6 @@ public class Gui extends Application {
     stage.show();
 
     scene.setOnKeyPressed(graphView.keyEventHandler(stage, scene));
-    scene.setOnKeyReleased(graphView.keyEventHandler(stage, scene));
 
     stage.setOnCloseRequest(t -> {
       Platform.exit();

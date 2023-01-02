@@ -6,6 +6,7 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.paint.Paint;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import sh.ball.patchable.graph.blocks.BlockDesigner;
 import sh.ball.patchable.graph.blocks.BlockPort;
 
 public class SpinnerBlock extends BasicBlock {
@@ -16,10 +17,10 @@ public class SpinnerBlock extends BasicBlock {
   private double increment;
 
   public SpinnerBlock(double min, double max, double value, double increment) {
-    super(List.of(), List.of(new BlockPort("Spinner value")), Paint.valueOf("#00008E"), "", 100, 0);
+    super(List.of(), List.of(new BlockPort("Spinner value")), BlockDesigner.BLUE, "", 100, 0);
     spinner = new Spinner<>(min, max, value, increment);
     addNode(spinner);
-    setProcessor((inputs, outputs) -> outputs[0] = spinner.getValue());
+    setProcessor((sampleNumber, inputs, outputs) -> outputs[0] = spinner.getValue());
     this.min = min;
     this.max = max;
     this.increment = increment;

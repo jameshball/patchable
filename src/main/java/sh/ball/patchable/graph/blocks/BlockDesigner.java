@@ -22,6 +22,11 @@ import javafx.scene.text.Text;
 
 public class BlockDesigner {
 
+  public static final Paint RED = Paint.valueOf("#AA0000");
+  public static final Paint GREEN = Paint.valueOf("#006700");
+  public static final Paint BLUE = Paint.valueOf("#00008E");
+  public static final Paint GREY = Paint.valueOf("#333333");
+
   private static final int INPUT_WIDTH = 10;
 
   private static void addPopup(BlockPort port, Node node) {

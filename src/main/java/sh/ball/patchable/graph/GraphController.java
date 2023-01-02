@@ -5,15 +5,12 @@ import static sh.ball.patchable.gui.Gui.logger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import javafx.beans.property.Property;
-import javafx.beans.property.SimpleObjectProperty;
+import java.util.stream.Collectors;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
@@ -23,7 +20,6 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.effect.ColorAdjust;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -38,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import sh.ball.patchable.graph.blocks.BlockConnection;
 import sh.ball.patchable.graph.blocks.types.AddBlock;
+import sh.ball.patchable.graph.blocks.types.ModuleBlock;
 import sh.ball.patchable.graph.blocks.types.MultiplyBlock;
 import sh.ball.patchable.graph.blocks.types.SineBlock;
 import sh.ball.patchable.graph.blocks.types.SliderBlock;
@@ -150,7 +147,7 @@ public class GraphController {
     block.getNode().setCursor(Cursor.MOVE);
   }
 
-  public void addConnection(BlockConnection connection) {
+  public void addCable(BlockConnection connection, Node newNode) {
     Line line = new Line();
     int sourceIndex = connection.sourceIndex();
     int destIndex = connection.destIndex();
@@ -160,24 +157,34 @@ public class GraphController {
     Node output = sourceOutputs.get(sourceIndex);
     Node input = destInputs.get(destIndex);
 
-    connection.dest().setInput(connection);
-
-    // Once layout is done (indicated by boundsInParentProperty updating), we can get the bounds of
-    // the nodes and bind the line to them relative to the source and destination nodes
-    output.boundsInParentProperty().addListener((observable, oldValue, outputBounds) -> {
+    ChangeListener<Bounds> bindCableEnd = (observable, oldValue, outputBounds) -> {
       outputBounds = connection.source().getNode().sceneToLocal(output.localToScene(output.getBoundsInLocal()));
       line.startXProperty().bind(connection.source().getNode().layoutXProperty().add(outputBounds.getCenterX()));
       line.startYProperty().bind(connection.source().getNode().layoutYProperty().add(outputBounds.getCenterY()));
-    });
+    };
 
-    input.boundsInParentProperty().addListener((observable, oldValue, inputBounds) -> {
+    // Once layout is done (indicated by boundsInParentProperty updating), we can get the bounds of
+    // the nodes and bind the line to them relative to the source and destination nodes
+    output.boundsInParentProperty().addListener(bindCableEnd);
+
+    ChangeListener<Bounds> bindCableStart = (observable, oldValue, inputBounds) -> {
       inputBounds = connection.dest().getNode().sceneToLocal(input.localToScene(input.getBoundsInLocal()));
       line.endXProperty().bind(connection.dest().getNode().layoutXProperty().add(inputBounds.getCenterX()));
       line.endYProperty().bind(connection.dest().getNode().layoutYProperty().add(inputBounds.getCenterY()));
-    });
+    };
+
+    input.boundsInParentProperty().addListener(bindCableStart);
+
+    bindCableStart.changed(null, null, null);
+    bindCableEnd.changed(null, null, null);
 
     group.getChildren().add(line);
     inputToCableMap.put(connection, line);
+  }
+
+  public void addConnection(BlockConnection connection) {
+    connection.dest().addConnection(connection);
+    addCable(connection, null);
   }
 
   private void checkForConnectionStart(Block block, MouseEvent event) {
@@ -219,10 +226,10 @@ public class GraphController {
               cable.endYProperty()
                   .bind(endBlock.getNode().layoutYProperty().add(endBounds.getCenterY()));
 
-              if (endBlock.currentInputs() < endBlock.totalInputs()) {
+              if (endBlock.getInput(j) == null) {
                 BlockConnection blockConnection = new BlockConnection(startBlock, outputIndex,
                     endBlock, j);
-                endBlock.setInput(blockConnection);
+                endBlock.addConnection(blockConnection);
                 connected = true;
                 inputToCableMap.put(blockConnection, cable);
                 cable = null;
@@ -232,6 +239,9 @@ public class GraphController {
             } else {
               // remove the input from the block
               BlockConnection blockConnection = endBlock.removeInput(j);
+              if (blockConnection != null) {
+                blockConnection.source().removeOutput(blockConnection);
+              }
               Node cable = inputToCableMap.remove(blockConnection);
               group.getChildren().remove(cable);
             }
@@ -377,6 +387,7 @@ public class GraphController {
       for (int i = 0; i < block.totalInputs(); i++) {
         BlockConnection blockConnection = block.removeInput(i);
         if (blockConnection != null) {
+          blockConnection.source().removeOutput(blockConnection);
           Node cable = inputToCableMap.remove(blockConnection);
           group.getChildren().remove(cable);
         }
@@ -387,7 +398,10 @@ public class GraphController {
         for (int i = 0; i < otherBlock.totalInputs(); i++) {
           BlockConnection blockConnection = otherBlock.getInput(i);
           if (blockConnection != null && blockConnection.source().equals(block)) {
-            otherBlock.removeInput(i);
+            BlockConnection connection = otherBlock.removeInput(i);
+            if (connection != null) {
+              connection.source().removeOutput(connection);
+            }
             Node cable = inputToCableMap.remove(blockConnection);
             group.getChildren().remove(cable);
           }
@@ -396,5 +410,22 @@ public class GraphController {
 
     }
     selectedBlocks.clear();
+  }
+
+  public void mergeSelected() {
+    List<Block> blocks = selectedBlocks.stream().filter(block -> !block.type().equals("return")).toList();
+    if (blocks.size() > 1) {
+      ModuleBlock module = new ModuleBlock(blocks);
+      for (Block block : blocks) {
+        group.getChildren().remove(block.getNode());
+        this.blocks.remove(block);
+      }
+      module.getRemovedConnections().forEach(connection -> {
+        Node cable = inputToCableMap.remove(connection);
+        group.getChildren().remove(cable);
+      });
+      addBlock(module);
+      module.getNewConnections().forEach(connection -> addCable(connection, module.getNode()));
+    }
   }
 }

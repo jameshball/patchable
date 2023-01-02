@@ -75,6 +75,9 @@ public class GraphView {
       if (e.getCode().equals(KeyCode.DELETE)) {
         controller.deleteSelected();
       }
+      if (e.getCode().equals(KeyCode.M)) {
+        controller.mergeSelected();
+      }
     };
   }
 }

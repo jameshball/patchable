@@ -1,6 +1,7 @@
 package sh.ball.patchable.graph.blocks.types;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -23,14 +24,15 @@ import sh.ball.patchable.graph.blocks.BlockProcessor;
 
 public abstract class BasicBlock implements Block {
 
-  private final List<BlockPort> inputPorts;
-  private final List<BlockPort> outputPorts;
+  protected List<BlockPort> inputPorts;
+  protected List<BlockPort> outputPorts;
   private Node node = null;
-  private final BlockConnection[] inputs;
-  private final List<Node> inputNodes;
-  private final List<Node> outputNodes;
-  private final double[] inputBuffer;
-  private final double[] outputBuffer;
+  protected BlockConnection[] inputs;
+  protected List<List<BlockConnection>> outputs;
+  protected List<Node> inputNodes;
+  protected List<Node> outputNodes;
+  protected double[] inputBuffer;
+  protected double[] outputBuffer;
   private final Paint color;
   private final String name;
   private final List<Node> nodes = new ArrayList<>();
@@ -38,8 +40,12 @@ public abstract class BasicBlock implements Block {
   private final double minHeight;
 
   private BlockProcessor processor;
-  private int previousSampleNumber = -1;
+  protected int previousSampleNumber = -1;
   protected AudioDevice device;
+
+  public BasicBlock(Paint color, String name) {
+    this(List.of(), List.of(), color, name);
+  }
 
   public BasicBlock(BlockProcessor processor, List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name) {
     this(processor, inputPorts, outputPorts, color, name, 40, 0);
@@ -54,6 +60,10 @@ public abstract class BasicBlock implements Block {
     this.inputNodes = BlockDesigner.inputNodes(inputPorts);
     this.outputNodes = BlockDesigner.outputNodes(outputPorts);
     this.inputs = new BlockConnection[inputPorts.size()];
+    this.outputs = new ArrayList<>();
+    for (int i = 0; i < outputPorts.size(); i++) {
+      outputs.add(new ArrayList<>());
+    }
     this.inputBuffer = new double[inputPorts.size()];
     this.outputBuffer = new double[outputPorts.size()];
     this.minWidth = minWidth;
@@ -87,7 +97,7 @@ public abstract class BasicBlock implements Block {
           inputBuffer[i] = 0;
         }
       }
-      processor.process(inputBuffer, outputBuffer);
+      processor.process(sampleNumber, inputBuffer, outputBuffer);
     }
 
     return outputBuffer[index];
@@ -95,11 +105,16 @@ public abstract class BasicBlock implements Block {
 
   @Override
   public List<BlockConnection> getInputs() {
-    return List.of(inputs);
+    return Arrays.asList(inputs);
   }
 
   @Override
-  public void setInput(BlockConnection connection) {
+  public List<List<BlockConnection>> getOutputs() {
+    return outputs;
+  }
+
+  @Override
+  public void addInput(BlockConnection connection) {
     int index = connection.destIndex();
     if (index >= totalInputs()) {
       throw new IllegalArgumentException("Block only has " + totalInputs() + " inputs");
@@ -111,9 +126,45 @@ public abstract class BasicBlock implements Block {
   }
 
   @Override
+  public void addOutput(BlockConnection connection) {
+    int index = connection.sourceIndex();
+    if (index >= totalOutputs()) {
+      throw new IllegalArgumentException("Block only has " + totalOutputs() + " outputs");
+    }
+    outputs.get(index).add(connection);
+  }
+
+  @Override
+  public void addConnection(BlockConnection connection) {
+    boolean inputConnection = connection.dest() == this;
+    boolean outputConnection = connection.source() == this;
+    if (!inputConnection && !outputConnection) {
+      throw new IllegalArgumentException("Connection must be either input or output");
+    }
+
+    if (inputConnection) {
+      addInput(connection);
+      connection.source().addOutput(connection);
+    } else {
+      addOutput(connection);
+      connection.dest().addInput(connection);
+    }
+  }
+
+  @Override
+  public List<BlockPort> getInputPorts() {
+    return inputPorts;
+  }
+
+  @Override
+  public List<BlockPort> getOutputPorts() {
+    return outputPorts;
+  }
+
+  @Override
   public BlockConnection getInput(int index) {
     if (index >= totalInputs()) {
-      throw new IllegalArgumentException("AddBlock only has " + totalInputs() + " inputs");
+      throw new IllegalArgumentException("Block only has " + totalInputs() + " inputs");
     }
     return inputs[index];
   }
@@ -121,11 +172,19 @@ public abstract class BasicBlock implements Block {
   @Override
   public BlockConnection removeInput(int index) {
     if (index >= totalInputs()) {
-      throw new IllegalArgumentException("AddBlock only has " + totalInputs() + " inputs");
+      throw new IllegalArgumentException("Block only has " + totalInputs() + " inputs");
     }
     BlockConnection input = inputs[index];
     inputs[index] = null;
     return input;
+  }
+
+  @Override
+  public void removeOutput(BlockConnection connection) {
+    if (connection.sourceIndex() >= totalOutputs()) {
+      throw new IllegalArgumentException("Block only has " + totalOutputs() + " outputs");
+    }
+    outputs.get(connection.sourceIndex()).remove(connection);
   }
 
   @Override
