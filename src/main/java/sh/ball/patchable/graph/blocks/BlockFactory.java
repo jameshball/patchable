@@ -1,6 +1,7 @@
 package sh.ball.patchable.graph.blocks;
 
 import sh.ball.patchable.graph.blocks.types.AddBlock;
+import sh.ball.patchable.graph.blocks.types.LabelBlock;
 import sh.ball.patchable.graph.blocks.types.MultiplyBlock;
 import sh.ball.patchable.graph.blocks.types.ReturnBlock;
 import sh.ball.patchable.graph.blocks.types.SineBlock;
@@ -17,6 +18,7 @@ public class BlockFactory {
       case "sine" -> new SineBlock();
       case "slider" -> new SliderBlock(0, 1, 0);
       case "spinner" -> new SpinnerBlock(0, 1, 0, 0.01);
+      case "label" -> new LabelBlock();
       default -> null;
     };
   }

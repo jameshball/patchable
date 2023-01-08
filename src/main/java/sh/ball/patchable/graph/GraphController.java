@@ -33,12 +33,7 @@ import sh.ball.patchable.graph.blocks.Block;
 import java.util.ArrayList;
 import java.util.List;
 import sh.ball.patchable.graph.blocks.BlockConnection;
-import sh.ball.patchable.graph.blocks.types.AddBlock;
-import sh.ball.patchable.graph.blocks.types.ModuleBlock;
-import sh.ball.patchable.graph.blocks.types.MultiplyBlock;
-import sh.ball.patchable.graph.blocks.types.SineBlock;
-import sh.ball.patchable.graph.blocks.types.SliderBlock;
-import sh.ball.patchable.graph.blocks.types.SpinnerBlock;
+import sh.ball.patchable.graph.blocks.types.*;
 
 public class GraphController {
 
@@ -49,6 +44,7 @@ public class GraphController {
   private final List<Double> selectedOffsetsY = new ArrayList<>();
   private final AudioEngine audioEngine;
   private final Map<BlockConnection, Node> inputToCableMap = new HashMap<>();
+  private final Pane pane;
 
   private Block startBlock;
   private Line cable;
@@ -59,7 +55,9 @@ public class GraphController {
   private double mouseDownY;
 
   public GraphController(Pane pane, Group group, ContextMenu contextMenu, AudioEngine audioEngine) {
+    this.pane = pane;
     pane.setId("main-pane");
+    pane.setOnMousePressed(e -> pane.requestFocus());
 
     Menu newBlock = new Menu("New Block");
 
@@ -68,7 +66,8 @@ public class GraphController {
         "Slider", () -> new SliderBlock(0, 1000, 1),
         "Spinner", () -> new SpinnerBlock(0, 1000, 1, 0.01),
         "Add", AddBlock::new,
-        "Multiply", MultiplyBlock::new
+        "Multiply", MultiplyBlock::new,
+        "Label", LabelBlock::new
     );
 
     for (String name : blockMap.keySet()) {
@@ -292,6 +291,8 @@ public class GraphController {
       }
       if (event.isPrimaryButtonDown() && event.getClickCount() == 2) {
         selectSingleBlock(block, event);
+        pane.requestFocus();
+        event.consume();
       }
       if (!selectedBlocks.contains(block)) {
         deselectAll();

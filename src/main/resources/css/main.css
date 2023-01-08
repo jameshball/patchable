@@ -152,18 +152,6 @@
     -fx-background-color: white;
 }
 
-.text-field, .text-input:disabled {
-    -fx-background-color: very_dark;
-    -fx-border-color: white;
-    -fx-border-width: 1;
-    -fx-border-radius: 0;
-    -fx-padding: 0.2em;
-}
-
-.text-field .text {
-    -fx-text-fill: white;
-}
-
 #frequency .text {
     -fx-font-size: 1.5em;
 }
@@ -399,15 +387,17 @@
     -fx-font-size: 1.5em;
 }
 
-.text-area .content {
-    -fx-background-color: very_dark;
+.text-area {
+    text-area-background: black ;
 }
 
-.text-area {
-    -fx-background-color: very_dark;
-    -fx-border-width: 1px;
-    -fx-border-radius: 0;
-    -fx-border-color: white;
+.text-area .content {
+    -fx-background-color: black;
+}
+
+.text-area .scroll-pane {
+    -fx-hbar-policy : never;
+    -fx-vbar-policy : never;
 }
 
 .white-border {

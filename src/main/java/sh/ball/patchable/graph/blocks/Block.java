@@ -25,6 +25,9 @@ public interface Block extends AudioDeviceListener {
   int totalOutputs();
   int currentInputs();
   Node getNode();
+  void addNonInheritableNode(Node node);
+  void addInheritableNode(Node node);
+  List<Node> getInheritableNodes();
   List<Node> getInputNodes();
   List<Node> getOutputNodes();
   List<Element> save(Document document);

@@ -3,7 +3,6 @@ package sh.ball.patchable.graph.blocks.types;
 import java.util.List;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.paint.Paint;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import sh.ball.patchable.graph.blocks.BlockDesigner;
@@ -19,7 +18,7 @@ public class SpinnerBlock extends BasicBlock {
   public SpinnerBlock(double min, double max, double value, double increment) {
     super(List.of(), List.of(new BlockPort("Spinner value")), BlockDesigner.BLUE, "", 100, 0);
     spinner = new Spinner<>(min, max, value, increment);
-    addNode(spinner);
+    addInheritableNode(spinner);
     setProcessor((sampleNumber, inputs, outputs) -> outputs[0] = spinner.getValue());
     this.min = min;
     this.max = max;
@@ -33,7 +32,7 @@ public class SpinnerBlock extends BasicBlock {
 
   @Override
   public List<Element> save(Document document) {
-    Element element = document.createElement("spinner");
+    Element element = document.createElement(type());
     element.setAttribute("min", String.valueOf(min));
     element.setAttribute("max", String.valueOf(max));
     element.setAttribute("value", String.valueOf(spinner.getValue()));
@@ -43,7 +42,7 @@ public class SpinnerBlock extends BasicBlock {
 
   @Override
   public void load(Element root) {
-    Element element = (Element) root.getElementsByTagName("spinner").item(0);
+    Element element = (Element) root.getElementsByTagName(type()).item(0);
     min = Double.parseDouble(element.getAttribute("min"));
     max = Double.parseDouble(element.getAttribute("max"));
     double value = Double.parseDouble(element.getAttribute("value"));

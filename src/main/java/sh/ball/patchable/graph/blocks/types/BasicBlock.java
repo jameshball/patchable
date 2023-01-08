@@ -35,7 +35,8 @@ public abstract class BasicBlock implements Block {
   protected double[] outputBuffer;
   private final Paint color;
   private final String name;
-  private final List<Node> nodes = new ArrayList<>();
+  private final List<Node> inheritableNodes = new ArrayList<>();
+  private final List<Node> nonInheritableNodes = new ArrayList<>();
   private final double minWidth;
   private final double minHeight;
 
@@ -47,11 +48,23 @@ public abstract class BasicBlock implements Block {
     this(List.of(), List.of(), color, name);
   }
 
+  public BasicBlock(Paint color, String name, double minWidth, double minHeight) {
+    this(List.of(), List.of(), color, name, minWidth, minHeight);
+  }
+
   public BasicBlock(BlockProcessor processor, List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name) {
     this(processor, inputPorts, outputPorts, color, name, 40, 0);
   }
 
   public BasicBlock(BlockProcessor processor, List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name, double minWidth, double minHeight) {
+    this(processor, inputPorts, outputPorts, color, name, minWidth, minHeight, null);
+  }
+
+  public BasicBlock() {
+    this(null, List.of(), List.of(), null, null, 0, 0, null);
+  }
+
+  public BasicBlock(BlockProcessor processor, List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name, double minWidth, double minHeight, Node node) {
     this.processor = processor;
     this.color = color;
     this.name = name;
@@ -68,6 +81,7 @@ public abstract class BasicBlock implements Block {
     this.outputBuffer = new double[outputPorts.size()];
     this.minWidth = minWidth;
     this.minHeight = minHeight;
+    this.node = node;
   }
 
   public BasicBlock(List<BlockPort> inputPorts, List<BlockPort> outputPorts, Paint color, String name) {
@@ -82,8 +96,18 @@ public abstract class BasicBlock implements Block {
     this.processor = processor;
   }
 
-  public void addNode(Node node) {
-    nodes.add(node);
+  @Override
+  public void addNonInheritableNode(Node node) {
+    nonInheritableNodes.add(node);
+  }
+
+  @Override
+  public void addInheritableNode(Node node) {
+    inheritableNodes.add(node);
+  }
+
+  public void setNode(Node node) {
+    this.node = node;
   }
 
   @Override
@@ -101,6 +125,11 @@ public abstract class BasicBlock implements Block {
     }
 
     return outputBuffer[index];
+  }
+
+  @Override
+  public List<Node> getInheritableNodes() {
+    return inheritableNodes;
   }
 
   @Override
@@ -236,8 +265,8 @@ public abstract class BasicBlock implements Block {
       Region region = new Region();
 
       VBox.setVgrow(region, Priority.ALWAYS);
-      Stream<Node> nodeStream = Stream.concat(Stream.concat(Stream.of(inputNodes), nodes.stream()), Stream.of(region, outputNodes));
-      node = BlockDesigner.createNode(color, name, minWidth, minHeight, nodeStream.toList());
+      Stream<Node> nodeStream = Stream.concat(nonInheritableNodes.stream(), Stream.concat(inheritableNodes.stream(), Stream.of(region)));
+      node = BlockDesigner.createNode(color, name, minWidth, minHeight, List.of(inputNodes), List.of(outputNodes), nodeStream.toList());
     }
     return node;
   }

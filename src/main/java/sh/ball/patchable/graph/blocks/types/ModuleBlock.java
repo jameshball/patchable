@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javafx.scene.Node;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import sh.ball.patchable.graph.blocks.Block;
 import sh.ball.patchable.graph.blocks.BlockConnection;
 import sh.ball.patchable.graph.blocks.BlockDesigner;
@@ -18,10 +20,11 @@ public class ModuleBlock extends BasicBlock {
   private final List<BlockConnection> newConnections;
   private final Map<Integer, BlockConnection> pseudoConnections = new HashMap<>();
   private final List<BlockConnection> removedConnections;
+  private final Block label = new LabelBlock("Module");
 
 
   public ModuleBlock(List<Block> blocks) {
-    super(BlockDesigner.BLUE, "Module");
+    super(BlockDesigner.BLUE, "", 100, 0);
 
     this.blocks.addAll(blocks);
 
@@ -34,6 +37,9 @@ public class ModuleBlock extends BasicBlock {
     List<BlockConnection> newConnections = new ArrayList<>();
     List<Block> outputBlocks = new ArrayList<>();
     List<Integer> outputIndices = new ArrayList<>();
+
+    VBox.setVgrow(label.getNode(), Priority.ALWAYS);
+    addNonInheritableNode(label.getNode());
 
     for (Block block : blocks) {
       List<BlockPort> blockInputPorts = block.getInputPorts();
@@ -58,10 +64,13 @@ public class ModuleBlock extends BasicBlock {
 
       List<BlockPort> blockOutputPorts = block.getOutputPorts();
       List<List<BlockConnection>> blockOutputs = block.getOutputs();
-      boolean addedPort = false;
       for (int i = 0; i < blockOutputs.size(); i++) {
+        boolean addedPort = false;
         List<BlockConnection> connections = new ArrayList<>(blockOutputs.get(i));
+
         if (connections.isEmpty()) {
+          outputBlocks.add(block);
+          outputIndices.add(i);
           outputPorts.add(blockOutputPorts.get(i));
         } else {
           for (BlockConnection connection : connections) {
@@ -81,6 +90,8 @@ public class ModuleBlock extends BasicBlock {
           }
         }
       }
+
+      block.getInheritableNodes().forEach(this::addInheritableNode);
     }
 
     this.inputPorts = inputPorts;
